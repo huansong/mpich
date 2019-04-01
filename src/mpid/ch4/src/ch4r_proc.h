@@ -93,12 +93,14 @@ MPL_STATIC_INLINE_PREFIX MPIDI_av_entry_t *MPIDIU_comm_rank_to_av(MPIR_Comm * co
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIU_COMM_RANK_TO_AV);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIU_COMM_RANK_TO_AV);
 
+    if (MPIDI_COMM(comm, map).mode == MPIDI_RANK_MAP_DIRECT_INTRA) {
+        ret = &MPIDI_av_table0->table[rank];
+        goto fn_exit;
+    }
+
     switch (MPIDI_COMM(comm, map).mode) {
         case MPIDI_RANK_MAP_DIRECT:
             ret = &MPIDI_av_table[MPIDI_COMM(comm, map).avtid]->table[rank];
-            break;
-        case MPIDI_RANK_MAP_DIRECT_INTRA:
-            ret = &MPIDI_av_table0->table[rank];
             break;
         case MPIDI_RANK_MAP_OFFSET:
             ret = &MPIDI_av_table[MPIDI_COMM(comm, map).avtid]
@@ -152,6 +154,7 @@ MPL_STATIC_INLINE_PREFIX MPIDI_av_entry_t *MPIDIU_comm_rank_to_av(MPIR_Comm * co
             break;
     }
 
+  fn_exit:
     MPL_DBG_MSG_FMT(MPIDI_CH4_DBG_MAP, VERBOSE,
                     (MPL_DBG_FDEST, " comm_to_av_addr: rank=%d, av addr=%p", rank, (void *) ret));
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIU_COMM_RANK_TO_AV);
