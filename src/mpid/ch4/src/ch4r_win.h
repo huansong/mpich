@@ -1834,8 +1834,14 @@ static inline int MPIDIG_mpi_win_create_dynamic(MPIR_Info * info, MPIR_Comm * co
 MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local(int rank, MPIR_Win * win)
 {
     int mpi_errno = MPI_SUCCESS;
+    int flags = MPIDI_PROGRESS_NM;
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_LOCAL);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_LOCAL);
+
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+    if (win->comm_ptr->node_comm != NULL)
+        flags |= MPIDI_PROGRESS_SHM;
+#endif
 
     /* Check window lock epoch.
      * PROC_NULL does not update per-target epoch. */
@@ -1849,9 +1855,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local(int rank, MPIR_Win * win
         MPIR_ERR_POP(mpi_errno);
 
 #ifndef MPIDI_CH4_DIRECT_NETMOD
-    mpi_errno = MPIDI_SHM_rma_target_local_cmpl_hook(rank, win);
-    if (mpi_errno != MPI_SUCCESS)
-        MPIR_ERR_POP(mpi_errno);
+    if (flags & MPIDI_PROGRESS_SHM) {
+        mpi_errno = MPIDI_SHM_rma_target_local_cmpl_hook(rank, win);
+        if (mpi_errno != MPI_SUCCESS)
+            MPIR_ERR_POP(mpi_errno);
+    }
 #endif
 
     /* Ensure completion of AM operations issued to the target.
@@ -1866,7 +1874,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local(int rank, MPIR_Win * win
 
     do {
         MPID_THREAD_CS_EXIT(VCI, MPIDI_global.vci_lock);
-        MPIDIU_PROGRESS();
+        MPIDI_Progress_test(flags);
         MPID_THREAD_CS_ENTER(VCI, MPIDI_global.vci_lock);
     } while (target_ptr && MPIR_cc_get(target_ptr->local_cmpl_cnts) != 0);
 
@@ -1905,10 +1913,16 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_all(MPIR_Win * win)
 {
     int mpi_errno = MPI_SUCCESS;
     int all_remote_completed = 0;
+    int flags = MPIDI_PROGRESS_NM;
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_ALL);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_ALL);
 
     MPIDIG_EPOCH_CHECK_PASSIVE(win, mpi_errno, goto fn_fail);
+
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+    if (win->comm_ptr->node_comm != NULL)
+        flags |= MPIDI_PROGRESS_SHM;
+#endif
 
     /* Ensure op completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_win_cmpl_hook(win);
@@ -1916,15 +1930,17 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_all(MPIR_Win * win)
         MPIR_ERR_POP(mpi_errno);
 
 #ifndef MPIDI_CH4_DIRECT_NETMOD
-    mpi_errno = MPIDI_SHM_rma_win_cmpl_hook(win);
-    if (mpi_errno != MPI_SUCCESS)
-        MPIR_ERR_POP(mpi_errno);
+    if (flags & MPIDI_PROGRESS_SHM) {
+        mpi_errno = MPIDI_SHM_rma_win_cmpl_hook(win);
+        if (mpi_errno != MPI_SUCCESS)
+            MPIR_ERR_POP(mpi_errno);
+    }
 #endif
 
     /* Ensure completion of AM operations */
     do {
         MPID_THREAD_CS_EXIT(VCI, MPIDI_global.vci_lock);
-        MPIDIU_PROGRESS();
+        MPIDI_Progress_test(flags);
         MPID_THREAD_CS_ENTER(VCI, MPIDI_global.vci_lock);
 
         /* FIXME: now we simply set per-target counters for lockall in case
