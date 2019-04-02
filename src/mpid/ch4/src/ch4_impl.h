@@ -376,6 +376,65 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_hash_clear(MPIR_Win * win)
         }                                                       \
     } while (0)
 
+/*#define MPIDI_Datatype_check_contig_size_lb(datatype_,count_,   \
+                                            dt_contig_out_,     \
+                                            data_sz_out_,       \
+                                            dt_true_lb_)        \
+    do {                                                        \
+        switch(datatype_) {                                     \
+            case MPI_CHAR:                                      \
+            case MPI_SIGNED_CHAR:                               \
+            case MPI_UNSIGNED_CHAR:                             \
+            case MPI_BYTE:                                      \
+                (dt_contig_out_) = TRUE;                        \
+                (data_sz_out_)   = (size_t)(count_);            \
+                (dt_true_lb_)    = 0;                           \
+                break;                                          \
+            case MPI_SHORT:                                     \
+            case MPI_UNSIGNED_SHORT:                            \
+                (dt_contig_out_) = TRUE;                        \
+                (data_sz_out_)   = (size_t)(count_) * 2;        \
+                (dt_true_lb_)    = 0;                           \
+                break;                                          \
+            case MPI_WCHAR:                                     \
+            case MPI_INT:                                       \
+            case MPI_UNSIGNED:                                  \
+            case MPI_FLOAT:                                     \
+                (dt_contig_out_) = TRUE;                        \
+                (data_sz_out_)   = (size_t)(count_) * 4;        \
+                (dt_true_lb_)    = 0;                           \
+                break;                                          \
+            case MPI_LONG:                                      \
+            case MPI_LONG_LONG:                                 \
+            case MPI_UNSIGNED_LONG:                             \
+            case MPI_UNSIGNED_LONG_LONG:                        \
+            case MPI_DOUBLE:                                    \
+                (dt_contig_out_) = TRUE;                        \
+                (data_sz_out_)   = (size_t)(count_) * 8;        \
+                (dt_true_lb_)    = 0;                           \
+                break;                                          \
+            case MPI_LONG_DOUBLE:                               \
+                (dt_contig_out_) = TRUE;                        \
+                (data_sz_out_)   = (size_t)(count_) * 16;       \
+                (dt_true_lb_)    = 0;                           \
+                break;                                          \
+            default:                                            \
+                MPIR_Datatype *dt_ptr_;                         \
+                MPIR_Datatype_get_ptr((datatype_), (dt_ptr_));  \
+                if (dt_ptr_) {                                  \
+                    (dt_contig_out_) = (dt_ptr_)->is_contig;    \
+                    (data_sz_out_)   = (size_t)(count_) *       \
+                        (dt_ptr_)->size;                        \
+                    (dt_true_lb_)    = (dt_ptr_)->true_lb;      \
+                } else {                                        \
+                    (dt_contig_out_) = 1;                       \
+                    (data_sz_out_)   = 0;                       \
+                    (dt_true_lb_)    = 0;                       \
+                }                                               \
+                break;                                          \
+        }                                                       \
+    } while (0)*/
+
 /* Check both origin|target buffers' size. */
 #define MPIDI_Datatype_check_origin_target_size(o_datatype_, t_datatype_,         \
                                                 o_count_, t_count_,               \
