@@ -1834,7 +1834,9 @@ static inline int MPIDIG_mpi_win_create_dynamic(MPIR_Info * info, MPIR_Comm * co
 MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local(int rank, MPIR_Win * win)
 {
     int mpi_errno = MPI_SUCCESS;
-    int flags = MPIDI_PROGRESS_NM;
+    int flags = 0;
+    if (!MPIR_CVAR_CH4_RMA_PUT_GET_ONLY)
+        flags = MPIDI_PROGRESS_NM;
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_LOCAL);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_LOCAL);
 
@@ -1913,7 +1915,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_all(MPIR_Win * win)
 {
     int mpi_errno = MPI_SUCCESS;
     int all_remote_completed = 0;
-    int flags = MPIDI_PROGRESS_NM;
+    int flags = 0;
+    if (!MPIR_CVAR_CH4_RMA_PUT_GET_ONLY)
+        flags = MPIDI_PROGRESS_NM;
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_ALL);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_MPI_WIN_FLUSH_ALL);
 

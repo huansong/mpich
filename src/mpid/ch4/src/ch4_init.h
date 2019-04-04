@@ -68,6 +68,16 @@ cvars:
       description : >-
         Enables an optimized business card exchange over PMI for node root processes only.
 
+    - name        : MPIR_CVAR_CH4_RMA_PUT_GET_ONLY
+      category    : CH4
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If true, the MPI program is guaranteed to only use PUT|GET in RMA.
+
     - name        : MPIR_CVAR_CH4_RUNTIME_CONF_DEBUG
       category    : CH4
       type        : boolean
