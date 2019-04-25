@@ -345,7 +345,6 @@ static inline int MPIDIG_win_init(MPI_Aint length, int disp_unit, MPIR_Win ** wi
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Win *win = (MPIR_Win *) MPIR_Handle_obj_alloc(&MPIR_Win_mem);
-    MPIDIG_win_target_t *targets = NULL;
     MPIR_Comm *win_comm_ptr;
     MPIDIG_win_info_accu_op_shift_t op_shift;
 
@@ -363,7 +362,13 @@ static inline int MPIDIG_win_init(MPI_Aint length, int disp_unit, MPIR_Win ** wi
     if (MPI_SUCCESS != mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
-    MPIDIG_WIN(win, targets) = targets;
+    MPIDIG_WIN(win, targets) = (MPIDIG_win_target_t **) MPL_malloc(comm_ptr->local_size *
+                                                                   sizeof(MPIDIG_win_target_t *),
+                                                                   MPL_MEM_RMA);
+    // FIXME: what is the regular way in MPICH to do this ?
+    int rank = 0;
+    for (rank = 0; rank < comm_ptr->local_size; rank++)
+        MPIDIG_WIN(win, targets)[rank] = NULL;
 
     win->errhandler = NULL;
     win->base = NULL;
@@ -1052,7 +1057,6 @@ static inline int MPIDIG_win_finalize(MPIR_Win ** win_ptr)
 #endif
 
     MPIDIG_win_target_cleanall(win);
-    MPIDIG_win_hash_clear(win);
 
     if (win->create_flavor == MPI_WIN_FLAVOR_ALLOCATE ||
         win->create_flavor == MPI_WIN_FLAVOR_SHARED) {

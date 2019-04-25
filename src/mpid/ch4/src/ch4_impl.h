@@ -154,17 +154,15 @@ MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_add(MPIR_Win * w
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_ADD);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_ADD);
 
-    MPIDIG_win_target_t *target_ptr = NULL;
-    target_ptr = (MPIDIG_win_target_t *) MPL_malloc(sizeof(MPIDIG_win_target_t), MPL_MEM_RMA);
-    target_ptr->rank = rank;
+    MPIDIG_win_target_t *target_ptr =
+        (MPIDIG_win_target_t *) MPL_malloc(sizeof(MPIDIG_win_target_t), MPL_MEM_RMA);
+    MPIDIG_WIN(win, targets)[rank] = target_ptr;
     MPIR_cc_set(&target_ptr->local_cmpl_cnts, 0);
     MPIR_cc_set(&target_ptr->remote_cmpl_cnts, 0);
     MPIR_cc_set(&target_ptr->remote_acc_cmpl_cnts, 0);
     target_ptr->sync.lock.locked = 0;
     target_ptr->sync.access_epoch_type = MPIDIG_EPOTYPE_NONE;
     target_ptr->sync.assert_mode = 0;
-
-    HASH_ADD(hash_handle, MPIDIG_WIN(win, targets), rank, sizeof(int), target_ptr, MPL_MEM_RMA);
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_ADD);
     return target_ptr;
@@ -179,8 +177,7 @@ MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_find(MPIR_Win * 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_FIND);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_FIND);
 
-    MPIDIG_win_target_t *target_ptr = NULL;
-    HASH_FIND(hash_handle, MPIDIG_WIN(win, targets), &rank, sizeof(int), target_ptr);
+    MPIDIG_win_target_t *target_ptr = MPIDIG_WIN(win, targets)[rank];
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_FIND);
     return target_ptr;
@@ -192,7 +189,7 @@ MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_find(MPIR_Win * 
 #define FCNAME MPL_QUOTE(FUNCNAME)
 MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_get(MPIR_Win * win, int rank)
 {
-    MPIDIG_win_target_t *target_ptr = MPIDIG_win_target_find(win, rank);
+    MPIDIG_win_target_t *target_ptr = MPIDIG_WIN(win, targets)[rank];
     if (!target_ptr)
         target_ptr = MPIDIG_win_target_add(win, rank);
     return target_ptr;
@@ -208,7 +205,6 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_target_delete(MPIR_Win * win,
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_DELETE);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_DELETE);
 
-    HASH_DELETE(hash_handle, MPIDIG_WIN(win, targets), target_ptr);
     MPL_free(target_ptr);
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_DELETE);
@@ -223,27 +219,14 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_target_cleanall(MPIR_Win * win)
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_CLEANALL);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_CLEANALL);
 
-    MPIDIG_win_target_t *target_ptr, *tmp;
-    HASH_ITER(hash_handle, MPIDIG_WIN(win, targets), target_ptr, tmp) {
-        HASH_DELETE(hash_handle, MPIDIG_WIN(win, targets), target_ptr);
+    int rank;
+    MPIDIG_win_target_t *target_ptr;
+    for (rank = 0; rank < win->comm_ptr->local_size; rank++) {
+        target_ptr = MPIDIG_WIN(win, targets)[rank];
         MPL_free(target_ptr);
     }
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_CLEANALL);
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIDIG_win_hash_clear
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-MPL_STATIC_INLINE_PREFIX void MPIDIG_win_hash_clear(MPIR_Win * win)
-{
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_HASH_CLEAR);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_HASH_CLEAR);
-
-    HASH_CLEAR(hash_handle, MPIDIG_WIN(win, targets));
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_HASH_CLEAR);
 }
 
 #define MPIDI_Datatype_get_info(count_, datatype_,              \

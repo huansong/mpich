@@ -364,8 +364,6 @@ typedef struct MPIDIG_win_target {
     MPIR_cc_t remote_cmpl_cnts; /* increase at OP issuing, decrease at remote completion */
     MPIR_cc_t remote_acc_cmpl_cnts;     /* for acc only, increase at OP issuing, decrease at remote completion */
     MPIDIG_win_target_sync_t sync;
-    int rank;
-    UT_hash_handle hash_handle;
 } MPIDIG_win_target_t;
 
 typedef struct MPIDIG_win_t {
@@ -389,7 +387,7 @@ typedef struct MPIDIG_win_t {
                                  * (e.g., may rely on support of interprocess mutex). */
 
     /* per-target structure for sync and OP completion. */
-    MPIDIG_win_target_t *targets;
+    MPIDIG_win_target_t **targets;
 } MPIDIG_win_t;
 
 typedef struct {
