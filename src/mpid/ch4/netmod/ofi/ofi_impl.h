@@ -292,14 +292,19 @@ MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_OFI_winfo_mr_key(MPIR_Win * w, int rank)
         return MPIDI_OFI_WIN(w).winfo[rank].mr_key;
 }
 
-MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_win_cntr_incr(MPIR_Win * win)
+MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_win_cntr_incr_local(MPIR_Win * win)
 {
-    (*MPIDI_OFI_WIN(win).issued_cntr)++;
+    (*MPIDI_OFI_WIN(win).issued_cntr_local)++;
+}
+
+MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_win_cntr_incr_remote(MPIR_Win * win)
+{
+    (*MPIDI_OFI_WIN(win).issued_cntr_remote)++;
 }
 
 MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_cntr_incr()
 {
-    MPIDI_OFI_global.rma_issued_cntr++;
+    MPIDI_OFI_global.rma_issued_cntr_local++;
 }
 
 /* Externs:  see util.c for definition */

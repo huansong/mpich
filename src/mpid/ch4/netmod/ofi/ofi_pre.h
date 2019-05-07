@@ -163,9 +163,13 @@ typedef struct {
     struct fid_ep *ep;          /* EP with counter & completion */
     int sep_tx_idx;             /* transmit context index for scalable EP,
                                  * -1 means using non scalable EP. */
-    uint64_t *issued_cntr;
-    uint64_t issued_cntr_v;     /* main body of an issued counter,
-                                 * if we are to use per-window counter */
+    uint64_t *issued_cntr_remote;
+    uint64_t *issued_cntr_local;
+    uint64_t cmpl_cntr_remote;
+    uint64_t cmpl_cntr_local;
+    uint64_t issued_cntr_remote_v;      /* main body of an issued counter,
+                                         * if we are to use per-window counter */
+    uint64_t issued_cntr_local_v;
     struct fid_cntr *cmpl_cntr;
     uint64_t win_id;
     struct MPIDI_OFI_win_request *syncQ;

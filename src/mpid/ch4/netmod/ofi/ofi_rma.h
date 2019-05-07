@@ -28,7 +28,7 @@
         creq->parent   = *sigreq;                                       \
         msg.context    = &creq->context;                                \
     }                                                                   \
-    MPIDI_OFI_win_cntr_incr(win);                                       \
+    MPIDI_OFI_win_cntr_incr_local(win);                                 \
     } while (0)
 
 #define MPIDI_OFI_INIT_SIGNAL_REQUEST(win,sigreq,flags)                 \
@@ -434,7 +434,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
     }
 
     if (origin_contig && target_contig && (origin_bytes <= MPIDI_OFI_global.max_buffered_write)) {
-        MPIDI_OFI_CALL_RETRY2(MPIDI_OFI_win_cntr_incr(win),
+        MPIDI_OFI_CALL_RETRY2(MPIDI_OFI_win_cntr_incr_remote(win),
                               fi_inject_write(MPIDI_OFI_WIN(win).ep,
                                               (char *) origin_addr + origin_true_lb, target_bytes,
                                               MPIDI_OFI_av_to_phys(addr),
@@ -876,7 +876,7 @@ static inline int MPIDI_NM_mpi_compare_and_swap(const void *origin_addr,
     msg.data = 0;
     MPIDI_OFI_ASSERT_IOVEC_ALIGN(&comparev);
     MPIDI_OFI_ASSERT_IOVEC_ALIGN(&resultv);
-    MPIDI_OFI_CALL_RETRY2(MPIDI_OFI_win_cntr_incr(win),
+    MPIDI_OFI_CALL_RETRY2(MPIDI_OFI_win_cntr_incr_local(win),
                           fi_compare_atomicmsg(MPIDI_OFI_WIN(win).ep, &msg,
                                                &comparev, NULL, 1, &resultv, NULL, 1, 0), atomicto);
   fn_exit:
@@ -1416,7 +1416,7 @@ static inline int MPIDI_NM_mpi_fetch_and_op(const void *origin_addr,
     msg.context = NULL;
     msg.data = 0;
     MPIDI_OFI_ASSERT_IOVEC_ALIGN(&resultv);
-    MPIDI_OFI_CALL_RETRY2(MPIDI_OFI_win_cntr_incr(win),
+    MPIDI_OFI_CALL_RETRY2(MPIDI_OFI_win_cntr_incr_local(win),
                           fi_fetch_atomicmsg(MPIDI_OFI_WIN(win).ep, &msg, &resultv,
                                              NULL, 1, 0), rdma_readfrom);
 

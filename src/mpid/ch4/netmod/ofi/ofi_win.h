@@ -244,8 +244,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_set_per_win_sync(MPIR_Win * win)
         goto fn_fail;
     }
 
-    MPIDI_OFI_WIN(win).issued_cntr = &MPIDI_OFI_WIN(win).issued_cntr_v;
-
     MPIDI_OFI_CALL_RETURN(fi_ep_bind
                           (MPIDI_OFI_WIN(win).ep, &MPIDI_OFI_WIN(win).cmpl_cntr->fid,
                            FI_READ | FI_WRITE), ret);
@@ -504,7 +502,8 @@ static inline int MPIDI_OFI_win_init_global(MPIR_Win * win)
 
     MPIDI_OFI_WIN(win).ep = MPIDI_OFI_global.ctx[0].tx;
     MPIDI_OFI_WIN(win).cmpl_cntr = MPIDI_OFI_global.rma_cmpl_cntr;
-    MPIDI_OFI_WIN(win).issued_cntr = &MPIDI_OFI_global.rma_issued_cntr;
+    MPIDI_OFI_WIN(win).issued_cntr_local = &MPIDI_OFI_global.rma_issued_cntr_local;
+    MPIDI_OFI_WIN(win).issued_cntr_remote = &MPIDI_OFI_global.rma_issued_cntr_remote;
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_WIN_INIT_GLOBAL);
 
@@ -573,7 +572,7 @@ static inline int MPIDI_OFI_win_progress_fence(MPIR_Win * win)
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_WIN_PROGRESS_FENCE);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_WIN_PROGRESS_FENCE);
 
-    tcount = *MPIDI_OFI_WIN(win).issued_cntr;
+    tcount = *MPIDI_OFI_WIN(win).issued_cntr_remote + *MPIDI_OFI_WIN(win).issued_cntr_local;
     donecount = fi_cntr_read(MPIDI_OFI_WIN(win).cmpl_cntr);
 
     MPIR_Assert(donecount <= tcount);
@@ -1248,7 +1247,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_win_cmpl_hook(MPIR_Win * win)
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_RMA_WIN_CMPL_HOOK);
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+        if (*MPIDI_OFI_WIN(win).issued_cntr_remote > MPIDI_OFI_WIN(win).cmpl_cntr_remote ||
+            *MPIDI_OFI_WIN(win).issued_cntr_local > MPIDI_OFI_WIN(win).cmpl_cntr_local) {
+            MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+            *MPIDI_OFI_WIN(win).issued_cntr_remote = MPIDI_OFI_WIN(win).cmpl_cntr_remote;
+            *MPIDI_OFI_WIN(win).issued_cntr_local = MPIDI_OFI_WIN(win).cmpl_cntr_local;
+        }
     }
 
   fn_exit:
@@ -1269,7 +1273,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_win_local_cmpl_hook(MPIR_Win * win)
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_RMA_WIN_LOCAL_CMPL_HOOK);
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+        if (*MPIDI_OFI_WIN(win).issued_cntr_remote > MPIDI_OFI_WIN(win).cmpl_cntr_remote) {
+            MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+            *MPIDI_OFI_WIN(win).issued_cntr_remote = MPIDI_OFI_WIN(win).cmpl_cntr_remote;
+        }
     }
 
   fn_exit:
@@ -1291,7 +1298,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_target_cmpl_hook(int rank ATTRIBUTE((u
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_RMA_TARGET_CMPL_HOOK);
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+        if (*MPIDI_OFI_WIN(win).issued_cntr_remote > MPIDI_OFI_WIN(win).cmpl_cntr_remote ||
+            *MPIDI_OFI_WIN(win).issued_cntr_local > MPIDI_OFI_WIN(win).cmpl_cntr_local) {
+            MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+            *MPIDI_OFI_WIN(win).issued_cntr_remote = MPIDI_OFI_WIN(win).cmpl_cntr_remote;
+            *MPIDI_OFI_WIN(win).issued_cntr_local = MPIDI_OFI_WIN(win).cmpl_cntr_local;
+        }
     }
 
   fn_exit:
@@ -1313,7 +1325,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_target_local_cmpl_hook(int rank ATTRIB
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_RMA_TARGET_LOCAL_CMPL_HOOK);
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+        if (*MPIDI_OFI_WIN(win).issued_cntr_remote > MPIDI_OFI_WIN(win).cmpl_cntr_remote) {
+            MPIDI_OFI_MPI_CALL_POP(MPIDI_OFI_win_progress_fence(win));
+            *MPIDI_OFI_WIN(win).issued_cntr_remote = MPIDI_OFI_WIN(win).cmpl_cntr_remote;
+        }
     }
 
   fn_exit:
