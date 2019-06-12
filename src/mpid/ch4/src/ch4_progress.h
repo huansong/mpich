@@ -13,6 +13,12 @@
 
 #include "ch4_impl.h"
 
+#define TRACING_SSC_MARK(MARK_ID)                     \
+        __asm__ __volatile__ (\
+                "\n\t  movl $"#MARK_ID", %%ebx"         \
+                "\n\t  .byte 0x64, 0x67, 0x90"          \
+                : : : "%ebx","memory");
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Progress_test
 #undef FCNAME
