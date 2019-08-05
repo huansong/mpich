@@ -290,6 +290,7 @@ typedef struct MPIDI_CH4_Global_t {
     int registered_progress_hooks;
     MPIR_Commops MPIR_Comm_fns_store;
     progress_hook_slot_t progress_hooks[MAX_PROGRESS_HOOKS];
+    int activated_progress_hooks;
     MPID_Thread_mutex_t m[3];
     MPIDIU_map_t *win_map;
     char *jobid;
