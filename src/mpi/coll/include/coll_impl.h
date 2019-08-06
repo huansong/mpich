@@ -21,7 +21,11 @@
 #include "../algorithms/treealgo/treealgo.h"
 #include "../algorithms/recexchalgo/recexchalgo.h"
 
-extern int MPIR_Nbc_progress_hook_id;
+/* These integers store the IDs of progress hooks */
+#define MPIR_NBC_PROGRESS_HOOK_ID 0
+#define MPII_GENUTIL_PROGRESS_HOOK_ID 1
+#define MPIDI_CH3I_RMA_PROGRESS_HOOK_ID 2
+#define HCOLL_PROGRESS_HOOK_ID 3
 
 extern MPIR_Tree_type_t MPIR_Iallreduce_tree_type;
 extern MPIR_Tree_type_t MPIR_Ireduce_tree_type;

@@ -32,8 +32,6 @@ cvars:
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
 
-int MPIR_Nbc_progress_hook_id = 0;
-
 MPIR_Tree_type_t MPIR_Iallreduce_tree_type = MPIR_TREE_TYPE_KARY;
 MPIR_Tree_type_t MPIR_Ibcast_tree_type = MPIR_TREE_TYPE_KARY;
 MPIR_Tree_type_t MPIR_Ireduce_tree_type = MPIR_TREE_TYPE_KARY;
@@ -71,7 +69,7 @@ int MPII_Coll_init(void)
         MPIR_Ireduce_tree_type = MPIR_TREE_TYPE_KARY;
 
     /* register non blocking collectives progress hook */
-    mpi_errno = MPID_Progress_register_hook(MPIDU_Sched_progress, &MPIR_Nbc_progress_hook_id);
+    mpi_errno = MPID_Progress_register_hook(MPIDU_Sched_progress, MPIR_NBC_PROGRESS_HOOK_ID);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -105,7 +103,7 @@ int MPII_Coll_finalize(void)
     int mpi_errno = MPI_SUCCESS;
 
     /* deregister non blocking collectives progress hook */
-    MPID_Progress_deregister_hook(MPIR_Nbc_progress_hook_id);
+    MPID_Progress_deregister_hook(MPIR_NBC_PROGRESS_HOOK_ID);
 
     mpi_errno = MPII_Gentran_finalize();
     if (mpi_errno)
